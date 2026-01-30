@@ -354,7 +354,7 @@ async function addCar() {
     }
 
     const selectedModel = document.getElementById('modelSearch').value.trim();
-    const selectedTuning = Array.from(document.querySelectorAll('.modern-tuning-option.selected'))
+    const selectedTuning = Array.from(document.querySelectorAll('#addCarTuningContainer .modern-tuning-option.selected'))
       .map(div => div.dataset.value || div.textContent)
       .join(', ');
 

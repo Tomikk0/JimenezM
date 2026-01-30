@@ -385,7 +385,7 @@ function clearInputs() {
     if (addedBySelect) addedBySelect.value = '';
 
     if (typeof resetTuningOptionVisibility === 'function') {
-      resetTuningOptionVisibility();
+      resetTuningOptionVisibility('add-car');
     } else {
       document.querySelectorAll('.modern-tuning-option').forEach(div => {
         div.classList.remove('selected');
@@ -406,8 +406,13 @@ function clearInputs() {
 // Galéria űrlap törlése
 function clearGalleryForm() {
   document.getElementById('galleryModelSearch').value = '';
+  document.getElementById('galleryBasePrice').value = '';
   document.getElementById('galleryPrice').value = '';
   clearGalleryImage();
+
+  if (typeof resetTuningOptionVisibility === 'function') {
+    resetTuningOptionVisibility('gallery');
+  }
   // ELTÁVOLÍTVA: showGalleryMessage('Űrlap törölve!', 'success');
 }
 

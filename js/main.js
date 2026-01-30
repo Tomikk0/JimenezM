@@ -1471,12 +1471,13 @@ function toggleTuningOption(button) {
   try {
     if (!button) return;
 
+    const container = button.closest('[data-tuning-scope]') || document;
     const category = button.dataset.category || button.dataset.group || '';
     const normalizedCategory = normalizeTuningCategory(category);
     const isExclusive = EXCLUSIVE_TUNING_CATEGORIES.has(normalizedCategory);
 
     if (isExclusive) {
-      const matchingOptions = Array.from(document.querySelectorAll('.modern-tuning-option'))
+      const matchingOptions = Array.from(container.querySelectorAll('.modern-tuning-option'))
         .filter(opt => normalizeTuningCategory(opt.dataset.category || opt.dataset.group || '') === normalizedCategory);
 
       matchingOptions.forEach(opt => {
@@ -1501,9 +1502,15 @@ function toggleTuningOption(button) {
   }
 }
 
-function resetTuningOptionVisibility() {
+function resetTuningOptionVisibility(scope = '') {
   try {
-    document.querySelectorAll('.modern-tuning-option').forEach(opt => {
+    const root = scope
+      ? document.querySelector(`[data-tuning-scope="${scope}"]`)
+      : document;
+
+    if (!root) return;
+
+    root.querySelectorAll('.modern-tuning-option').forEach(opt => {
       opt.classList.remove('selected', 'option-hidden');
       opt.style.transform = 'translateY(0) scale(1)';
     });
@@ -1512,13 +1519,16 @@ function resetTuningOptionVisibility() {
   }
 }
 
-function renderTuningOptions(options) {
+function renderTuningOptionsInContainer(options, config) {
   try {
-    const container = document.getElementById('addCarTuningContainer');
-    const compactSection = document.getElementById('addCarCompactSection');
+    const { containerId, compactSectionId, scope } = config || {};
+    const container = document.getElementById(containerId);
+    const compactSection = compactSectionId ? document.getElementById(compactSectionId) : null;
     if (!container) return;
 
+    container.dataset.tuningScope = scope || '';
     container.innerHTML = '';
+
     if (!options || options.length === 0) {
       container.innerHTML = '<div class="tuning-loading">Nincs tuning opció.</div>';
       if (compactSection) {
@@ -1565,6 +1575,7 @@ function renderTuningOptions(options) {
       button.dataset.group = groupName;
       button.dataset.category = category;
       button.dataset.value = value;
+      button.dataset.scope = scope || '';
       button.onclick = () => toggleTuningOption(button);
       optionsEl.appendChild(button);
     });
@@ -1572,12 +1583,25 @@ function renderTuningOptions(options) {
     groupEl.appendChild(optionsEl);
     container.appendChild(groupEl);
   } catch (error) {
-    console.error('renderTuningOptions hiba:', error);
-    const compactSection = document.getElementById('addCarCompactSection');
+    console.error('renderTuningOptionsInContainer hiba:', error);
+    const compactSection = compactSectionId ? document.getElementById(compactSectionId) : null;
     if (compactSection) {
       compactSection.style.display = 'none';
     }
   }
+}
+
+function renderTuningOptions(options) {
+  renderTuningOptionsInContainer(options, {
+    containerId: 'addCarTuningContainer',
+    compactSectionId: 'addCarCompactSection',
+    scope: 'add-car'
+  });
+
+  renderTuningOptionsInContainer(options, {
+    containerId: 'galleryTuningContainer',
+    scope: 'gallery'
+  });
 }
 
 async function loadModelOptions() {
@@ -1755,7 +1779,7 @@ async function loadCarGallery() {
     const tbody = document.getElementById('galleryTableBody');
     tbody.innerHTML = `
       <tr>
-        <td colspan="5" style="text-align: center; color: #e53e3e; padding: 20px;">
+        <td colspan="6" style="text-align: center; color: #e53e3e; padding: 20px;">
           ❌ Hiba történt az autó képek betöltésekor
         </td>
       </tr>

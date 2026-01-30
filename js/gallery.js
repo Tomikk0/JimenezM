@@ -15,7 +15,7 @@ async function loadCarGallery() {
     const tbody = document.getElementById('galleryTableBody');
     tbody.innerHTML = `
       <tr>
-        <td colspan="5" style="text-align: center; color: #e53e3e; padding: 20px;">
+        <td colspan="6" style="text-align: center; color: #e53e3e; padding: 20px;">
           ❌ Hiba történt az autó képek betöltésekor
         </td>
       </tr>
@@ -77,6 +77,7 @@ function renderCarGallery(cars) {
     // ÁRAK
     const baseAr = car.base_price ? new Intl.NumberFormat('hu-HU').format(car.base_price) + ' $' : '-';
     const eladasiAr = car.sale_price ? new Intl.NumberFormat('hu-HU').format(car.sale_price) + ' $' : '-';
+    const tuningText = car.tuning ? escapeHtml(car.tuning) : '-';
     
     // MŰVELET GOMBOK
     let actionCell = '';
@@ -111,6 +112,7 @@ function renderCarGallery(cars) {
     row.innerHTML = `
       ${imageHtml}
       <td style="font-weight: 600; color: #2d3748;">${escapeHtml(car.model || '')}</td>
+      <td class="tuning-cell">${tuningText}</td>
       <td class="price-cell price-desired">${baseAr}</td>
       <td class="price-cell price-sale" id="price-${car.id}">${eladasiAr}</td>
       ${actionCell}
@@ -152,6 +154,9 @@ async function addGalleryCar() {
     const model = document.getElementById('galleryModelSearch').value.trim();
     const basePrice = document.getElementById('galleryBasePrice').value.replace(/[^\d]/g, '');
     const price = document.getElementById('galleryPrice').value.replace(/[^\d]/g, '');
+    const selectedTuning = Array.from(document.querySelectorAll('#galleryTuningContainer .modern-tuning-option.selected'))
+      .map(div => div.dataset.value || div.textContent)
+      .join(', ');
 
     if (!model) {
       showGalleryMessage('Válassz modellt a listából!', 'warning');
@@ -173,6 +178,7 @@ async function addGalleryCar() {
       model: model,
       base_price: basePrice ? parseInt(basePrice) : null, // Új alap ár mező
       sale_price: parseInt(price),
+      tuning: selectedTuning,
       added_by: currentUser.tagName,
       image_data_url: imageDataUrl, // Ez lehet null is
       is_gallery: true,
