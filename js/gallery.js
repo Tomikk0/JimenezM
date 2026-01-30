@@ -199,6 +199,16 @@ function renderCarGallery(cars, query = '') {
       
       let buttonsHtml = '';
 
+      const basePricePayload = JSON.stringify(car.base_price ?? null);
+      const salePricePayload = JSON.stringify(car.sale_price ?? null);
+      const modelNamePayload = car.model ? car.model.replace(/'/g, "\\'") : '';
+
+      buttonsHtml += `
+        <button class="modern-btn-sold" onclick="openEditGalleryPriceModalWithModel(${car.id}, ${basePricePayload}, ${salePricePayload}, '${modelNamePayload}')">
+          ✏️ Ár módosítás
+        </button>
+      `;
+
       // TÖRLÉS gomb
       if (canDelete) {
         buttonsHtml += `<button class="modern-btn-delete" onclick="deleteGalleryCar(${car.id})">❌ Törlés</button>`;
