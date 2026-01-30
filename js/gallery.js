@@ -201,10 +201,10 @@ function renderCarGallery(cars, query = '') {
 
       const basePricePayload = JSON.stringify(car.base_price ?? null);
       const salePricePayload = JSON.stringify(car.sale_price ?? null);
-      const modelNamePayload = car.model ? car.model.replace(/'/g, "\\'") : '';
+      const modelNamePayload = JSON.stringify(car.model ?? '');
 
       buttonsHtml += `
-        <button class="modern-btn-sold" onclick="openEditGalleryPriceModalWithModel(${car.id}, ${basePricePayload}, ${salePricePayload}, '${modelNamePayload}')">
+        <button class="modern-btn-sold" onclick="openEditGalleryPriceModalWithModel(${car.id}, ${basePricePayload}, ${salePricePayload}, ${modelNamePayload})">
           ✏️ Ár módosítás
         </button>
       `;
