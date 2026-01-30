@@ -1,4 +1,58 @@
 // === GALÉRIA FUNKCIÓK ===
+let addGalleryCarModalEscHandler = null;
+
+function openAddGalleryCarModal() {
+  try {
+    if (!currentUser) {
+      showGalleryMessage('Bejelentkezés szükséges!', 'warning');
+      return;
+    }
+
+    clearGalleryForm();
+
+    const modal = document.getElementById('addGalleryCarModal');
+    if (!modal) return;
+
+    modal.style.display = 'block';
+    modal.classList.add('active');
+
+    setTimeout(() => {
+      const input = document.getElementById('galleryModelSearch');
+      if (input) {
+        input.focus();
+      }
+    }, 150);
+
+    if (!addGalleryCarModalEscHandler) {
+      addGalleryCarModalEscHandler = (event) => {
+        if (event.key === 'Escape') {
+          closeAddGalleryCarModal();
+        }
+      };
+    }
+
+    document.addEventListener('keydown', addGalleryCarModalEscHandler);
+  } catch (error) {
+    console.error('openAddGalleryCarModal hiba:', error);
+  }
+}
+
+function closeAddGalleryCarModal() {
+  try {
+    const modal = document.getElementById('addGalleryCarModal');
+    if (!modal) return;
+
+    modal.classList.remove('active');
+    modal.style.display = 'none';
+
+    if (addGalleryCarModalEscHandler) {
+      document.removeEventListener('keydown', addGalleryCarModalEscHandler);
+      addGalleryCarModalEscHandler = null;
+    }
+  } catch (error) {
+    console.error('closeAddGalleryCarModal hiba:', error);
+  }
+}
 async function loadCarGallery() {
   try {
     const { data: cars, error } = await supabase
@@ -31,7 +85,7 @@ function renderCarGallery(cars) {
       <tr>
         <td colspan="6" class="empty-table-message">
           🚗 Nincsenek megjeleníthető autók a galériában<br>
-          <small style="opacity: 0.7;">Adj hozzá egy új autót a fenti űrlappal!</small>
+          <small style="opacity: 0.7;">Adj hozzá egy új autót a felugró ablakban!</small>
         </td>
       </tr>
     `;
@@ -199,6 +253,7 @@ async function addGalleryCar() {
       console.log('✅ Galéria autó hozzáadva:', data);
       showGalleryMessage('Autó sikeresen hozzáadva a galériához!', 'success');
       clearGalleryForm();
+      closeAddGalleryCarModal();
       loadCarGallery();
     }
 
