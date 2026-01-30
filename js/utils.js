@@ -11,6 +11,9 @@ function escapeHtml(unsafe) {
 
 function formatInputPrice(input) {
   try {
+    if (input && input.dataset && input.dataset.allowRange === 'true') {
+      return;
+    }
     const value = input.value.replace(/[^\d]/g, '');
     if (value) {
       const formatted = new Intl.NumberFormat('hu-HU').format(parseInt(value));

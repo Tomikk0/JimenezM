@@ -795,7 +795,7 @@
             <label for="galleryBasePrice">💰 Vételi ár</label>
             <div class="modern-input-container price">
               <input type="text" id="galleryBasePrice" class="modern-input" placeholder="0" 
-                    oninput="formatInputPrice(this)">
+                    data-allow-range="true" oninput="formatInputPrice(this)">
             </div>
           </div>
 
@@ -803,7 +803,7 @@
             <label for="galleryPrice">💵 Eladási ár</label>
             <div class="modern-input-container price">
               <input type="text" id="galleryPrice" class="modern-input" placeholder="0" 
-                    oninput="formatInputPrice(this)">
+                    data-allow-range="true" oninput="formatInputPrice(this)">
             </div>
           </div>
         </div>
@@ -862,7 +862,7 @@
         <div class="form-group">
           <label for="editGalleryBasePrice">💰 Vételi ár</label>
           <div class="price-input-container">
-            <input type="text" id="editGalleryBasePrice" placeholder="0" maxlength="15" oninput="formatInputPrice(this)">
+            <input type="text" id="editGalleryBasePrice" placeholder="0" maxlength="15" data-allow-range="true" oninput="formatInputPrice(this)">
           </div>
           <div class="price-hint">Írd be a vételi árat</div>
         </div>
@@ -870,7 +870,7 @@
         <div class="form-group">
           <label for="editGalleryPrice">💵 Eladási ár</label>
           <div class="price-input-container">
-            <input type="text" id="editGalleryPrice" placeholder="0" maxlength="15" oninput="formatInputPrice(this)">
+            <input type="text" id="editGalleryPrice" placeholder="0" maxlength="15" data-allow-range="true" oninput="formatInputPrice(this)">
           </div>
           <div class="price-hint">Írd be az eladási árat</div>
         </div>

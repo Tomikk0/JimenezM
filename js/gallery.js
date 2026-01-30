@@ -2,6 +2,34 @@
 let addGalleryCarModalEscHandler = null;
 let galleryCarsCache = [];
 
+function normalizeGalleryPriceInput(rawValue) {
+  const value = (rawValue || '').toString().trim();
+  if (!value) return null;
+
+  if (/^\d+$/.test(value)) {
+    return parseInt(value, 10);
+  }
+
+  return value;
+}
+
+function formatGalleryPriceDisplay(value) {
+  if (value === null || value === undefined || value === '') {
+    return '-';
+  }
+
+  if (typeof value === 'number') {
+    return `${new Intl.NumberFormat('hu-HU').format(value)} $`;
+  }
+
+  const raw = value.toString();
+  if (/^\d+$/.test(raw)) {
+    return `${new Intl.NumberFormat('hu-HU').format(parseInt(raw, 10))} $`;
+  }
+
+  return escapeHtml(raw);
+}
+
 function openAddGalleryCarModal() {
   try {
     if (!currentUser) {
@@ -160,8 +188,8 @@ function renderCarGallery(cars, query = '') {
     }
     
     // ÁRAK
-    const baseAr = car.base_price ? new Intl.NumberFormat('hu-HU').format(car.base_price) + ' $' : '-';
-    const eladasiAr = car.sale_price ? new Intl.NumberFormat('hu-HU').format(car.sale_price) + ' $' : '-';
+    const baseAr = formatGalleryPriceDisplay(car.base_price);
+    const eladasiAr = formatGalleryPriceDisplay(car.sale_price);
     const tuningText = car.tuning ? escapeHtml(car.tuning) : '-';
     
     // MŰVELET GOMBOK
@@ -172,8 +200,12 @@ function renderCarGallery(cars, query = '') {
       let buttonsHtml = '';
       
       // ÁR MÓDOSÍTÁS gomb
+      const basePricePayload = JSON.stringify(car.base_price ?? null);
+      const salePricePayload = JSON.stringify(car.sale_price ?? null);
+      const modelNamePayload = car.model ? car.model.replace(/'/g, "\\'") : '';
+
       buttonsHtml += `
-        <button class="modern-btn-sold" onclick="openEditGalleryPriceModalWithModel(${car.id}, ${car.base_price || 0}, ${car.sale_price || 0}, '${car.model ? car.model.replace(/'/g, "\\'") : ''}')">
+        <button class="modern-btn-sold" onclick="openEditGalleryPriceModalWithModel(${car.id}, ${basePricePayload}, ${salePricePayload}, '${modelNamePayload}')">
           ✏️ Ár módosítás
         </button>
       `;
@@ -214,11 +246,11 @@ function openEditGalleryPriceModalWithModel(carId, currentBasePrice, currentSale
   document.getElementById('editGalleryCarModel').textContent = modelName || 'Ismeretlen modell';
   
   // Árak formázása
-  const formattedBasePrice = currentBasePrice ? new Intl.NumberFormat('hu-HU').format(currentBasePrice) : '';
-  const formattedSalePrice = currentSalePrice ? new Intl.NumberFormat('hu-HU').format(currentSalePrice) : '';
+  const formattedBasePrice = formatGalleryPriceDisplay(currentBasePrice);
+  const formattedSalePrice = formatGalleryPriceDisplay(currentSalePrice);
   
-  document.getElementById('editGalleryBasePrice').value = formattedBasePrice;
-  document.getElementById('editGalleryPrice').value = formattedSalePrice;
+  document.getElementById('editGalleryBasePrice').value = formattedBasePrice === '-' ? '' : formattedBasePrice.replace(/\s*\$\s*$/, '');
+  document.getElementById('editGalleryPrice').value = formattedSalePrice === '-' ? '' : formattedSalePrice.replace(/\s*\$\s*$/, '');
   
   // Modal megjelenítése
   document.getElementById('editGalleryPriceModal').style.display = 'block';
@@ -237,8 +269,8 @@ async function addGalleryCar() {
     }
 
     const model = document.getElementById('galleryModelSearch').value.trim();
-    const basePrice = document.getElementById('galleryBasePrice').value.replace(/[^\d]/g, '');
-    const price = document.getElementById('galleryPrice').value.replace(/[^\d]/g, '');
+    const basePriceRaw = document.getElementById('galleryBasePrice').value;
+    const priceRaw = document.getElementById('galleryPrice').value;
     const selectedTuning = Array.from(document.querySelectorAll('#galleryTuningContainer .modern-tuning-option.selected'))
       .map(div => div.dataset.value || div.textContent)
       .join(', ');
@@ -248,7 +280,7 @@ async function addGalleryCar() {
       return;
     }
 
-    if (!price) {
+    if (!priceRaw.trim()) {
       showGalleryMessage('Add meg az eladási árat!', 'warning');
       return;
     }
@@ -261,8 +293,8 @@ async function addGalleryCar() {
 
     const carData = {
       model: model,
-      base_price: basePrice ? parseInt(basePrice) : null, // Új alap ár mező
-      sale_price: parseInt(price),
+      base_price: normalizeGalleryPriceInput(basePriceRaw),
+      sale_price: normalizeGalleryPriceInput(priceRaw),
       tuning: selectedTuning,
       added_by: currentUser.tagName,
       image_data_url: imageDataUrl, // Ez lehet null is
@@ -316,11 +348,11 @@ function openEditGalleryPriceModal(carId, currentBasePrice, currentSalePrice) {
   document.getElementById('editGalleryCarModel').textContent = modelName;
   
   // Árak formázása
-  const formattedBasePrice = currentBasePrice ? new Intl.NumberFormat('hu-HU').format(currentBasePrice) : '';
-  const formattedSalePrice = currentSalePrice ? new Intl.NumberFormat('hu-HU').format(currentSalePrice) : '';
+  const formattedBasePrice = formatGalleryPriceDisplay(currentBasePrice);
+  const formattedSalePrice = formatGalleryPriceDisplay(currentSalePrice);
   
-  document.getElementById('editGalleryBasePrice').value = formattedBasePrice;
-  document.getElementById('editGalleryPrice').value = formattedSalePrice;
+  document.getElementById('editGalleryBasePrice').value = formattedBasePrice === '-' ? '' : formattedBasePrice.replace(/\s*\$\s*$/, '');
+  document.getElementById('editGalleryPrice').value = formattedSalePrice === '-' ? '' : formattedSalePrice.replace(/\s*\$\s*$/, '');
   
   // Modal megjelenítése
   document.getElementById('editGalleryPriceModal').style.display = 'block';
@@ -339,21 +371,16 @@ function closeEditGalleryPriceModal() {
 async function saveGalleryPrice() {
   try {
     const carId = document.getElementById('editGalleryCarId').value;
-    const newPrice = document.getElementById('editGalleryPrice').value.replace(/[^\d]/g, '');
+    const newBasePriceRaw = document.getElementById('editGalleryBasePrice').value;
+    const newPriceRaw = document.getElementById('editGalleryPrice').value;
     
     if (!carId) {
       showGalleryMessage('Autó azonosító hiányzik!', 'error');
       return;
     }
     
-    if (!newPrice) {
+    if (!newPriceRaw.trim() && !newBasePriceRaw.trim()) {
       showGalleryMessage('Add meg az új árat!', 'warning');
-      return;
-    }
-    
-    const priceValue = parseInt(newPrice);
-    if (isNaN(priceValue) || priceValue <= 0) {
-      showGalleryMessage('Érvényes árat adj meg!', 'error');
       return;
     }
 
@@ -378,7 +405,8 @@ async function saveGalleryPrice() {
     const { error } = await supabase
       .from('cars')
       .update({ 
-        sale_price: priceValue,
+        base_price: normalizeGalleryPriceInput(newBasePriceRaw),
+        sale_price: normalizeGalleryPriceInput(newPriceRaw),
         updated_at: new Date().toISOString()
       })
       .eq('id', carId);
