@@ -30,6 +30,30 @@ function formatGalleryPriceDisplay(value) {
   return escapeHtml(raw);
 }
 
+function handleGalleryEditClick(button) {
+  try {
+    if (!button || !button.dataset) return;
+
+    const carId = parseInt(button.dataset.carId || '', 10);
+    if (Number.isNaN(carId)) {
+      showGalleryMessage('Autó azonosító hiányzik!', 'error');
+      return;
+    }
+
+    const baseRaw = decodeURIComponent(button.dataset.basePrice || '');
+    const saleRaw = decodeURIComponent(button.dataset.salePrice || '');
+    const modelName = decodeURIComponent(button.dataset.modelName || '');
+
+    const baseValue = normalizeGalleryPriceInput(baseRaw);
+    const saleValue = normalizeGalleryPriceInput(saleRaw);
+
+    openEditGalleryPriceModalWithModel(carId, baseValue, saleValue, modelName);
+  } catch (error) {
+    console.error('handleGalleryEditClick hiba:', error);
+    showGalleryMessage('Hiba történt az ár módosítás megnyitásakor', 'error');
+  }
+}
+
 function openAddGalleryCarModal() {
   try {
     if (!currentUser) {
@@ -199,12 +223,17 @@ function renderCarGallery(cars, query = '') {
       
       let buttonsHtml = '';
 
-      const basePricePayload = JSON.stringify(car.base_price ?? null);
-      const salePricePayload = JSON.stringify(car.sale_price ?? null);
-      const modelNamePayload = JSON.stringify(car.model ?? '');
+      const basePriceAttr = escapeHtml(encodeURIComponent(car.base_price ?? ''));
+      const salePriceAttr = escapeHtml(encodeURIComponent(car.sale_price ?? ''));
+      const modelNameAttr = escapeHtml(encodeURIComponent(car.model ?? ''));
 
       buttonsHtml += `
-        <button class="modern-btn-sold" onclick="openEditGalleryPriceModalWithModel(${car.id}, ${basePricePayload}, ${salePricePayload}, ${modelNamePayload})">
+        <button class="modern-btn-sold"
+                data-car-id="${car.id}"
+                data-base-price="${basePriceAttr}"
+                data-sale-price="${salePriceAttr}"
+                data-model-name="${modelNameAttr}"
+                onclick="handleGalleryEditClick(this)">
           ✏️ Ár módosítás
         </button>
       `;
