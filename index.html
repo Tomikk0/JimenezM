@@ -571,14 +571,6 @@
   <div class="form-header-with-filters">
     <div class="form-title">
     </div>
-    <div class="form-filters">
-      <label class="visually-hidden" for="gallerySearch">Keresés</label>
-      <div class="modern-input-container search">
-        <span class="input-icon">🔍</span>
-        <input type="text" id="gallerySearch" class="modern-input" placeholder="Keresés autóra..."
-               oninput="filterGalleryCars()">
-      </div>
-    </div>
   </div>
 
   <div id="tuningMessage" class="message"></div>
@@ -732,14 +724,6 @@
   <div class="form-header-with-filters">
     <div class="form-title">
     </div>
-    <div class="form-filters">
-      <label class="visually-hidden" for="gallerySearch">Keresés</label>
-      <div class="modern-input-container search">
-        <span class="input-icon">🔍</span>
-        <input type="text" id="gallerySearch" class="modern-input" placeholder="Keresés autóra..."
-               oninput="filterGalleryCars()">
-      </div>
-    </div>
   </div>
 
   <div id="galleryMessage" class="message"></div>
@@ -750,9 +734,17 @@
       <div class="modern-form-header">
         <h3>➕ Új autó hozzáadása a listához</h3>
       </div>
-      <div class="modern-form-actions">
+      <div class="modern-form-actions modern-form-actions--gallery">
         <button onclick="openAddGalleryCarModal()" class="modern-btn-primary">➕ Autó hozzáadása</button>
         <button onclick="loadCarGallery()" class="modern-btn-secondary">🔄 Frissítés</button>
+        <div class="modern-form-search">
+          <label class="visually-hidden" for="gallerySearch">Keresés</label>
+          <div class="modern-input-container search">
+            <span class="input-icon">🔍</span>
+            <input type="text" id="gallerySearch" class="modern-input" placeholder="Keresés autóra..."
+                   oninput="filterGalleryCars()">
+          </div>
+        </div>
       </div>
     </div>
   </div>
