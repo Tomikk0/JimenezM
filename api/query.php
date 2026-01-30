@@ -93,6 +93,9 @@ function run_insert(\PDO $pdo, string $table, $data, bool $returning, string $se
     }
 
     $rows = is_assoc($data) ? [$data] : $data;
+    if ($table === 'cars') {
+        ensure_price_columns_support_ranges($pdo, $rows);
+    }
 
     $tableColumns = array_fill_keys(get_table_columns($pdo, $table), true);
     if (empty($tableColumns)) {
@@ -145,6 +148,10 @@ function run_update(\PDO $pdo, string $table, $data, string $whereClause, array 
         send_error('Update data must be an object');
     }
 
+    if ($table === 'cars') {
+        ensure_price_columns_support_ranges($pdo, [$data]);
+    }
+
     $tableColumns = array_fill_keys(get_table_columns($pdo, $table), true);
     if (empty($tableColumns)) {
         send_error('No columns available for table', 500, ['table' => $table]);
@@ -185,6 +192,51 @@ function run_delete(\PDO $pdo, string $table, string $whereClause, array $params
     $statement->execute($params);
 
     return $statement->rowCount();
+}
+
+function ensure_price_columns_support_ranges(\PDO $pdo, array $rows): void
+{
+    $needsRangeSupport = false;
+
+    foreach ($rows as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+
+        foreach (['base_price', 'sale_price'] as $column) {
+            if (!array_key_exists($column, $row)) {
+                continue;
+            }
+
+            $value = $row[$column];
+            if (is_string($value) && $value !== '' && !ctype_digit($value)) {
+                $needsRangeSupport = true;
+                break 2;
+            }
+        }
+    }
+
+    if (!$needsRangeSupport) {
+        return;
+    }
+
+    foreach (['base_price', 'sale_price'] as $column) {
+        $statement = $pdo->prepare(sprintf('SHOW COLUMNS FROM `cars` LIKE %s', $pdo->quote($column)));
+        $statement->execute();
+        $columnInfo = $statement->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$columnInfo || !isset($columnInfo['Type'])) {
+            continue;
+        }
+
+        $type = strtolower((string) $columnInfo['Type']);
+        if (str_contains($type, 'char') || str_contains($type, 'text')) {
+            continue;
+        }
+
+        $alterSql = sprintf('ALTER TABLE `cars` MODIFY COLUMN `%s` VARCHAR(64) NULL', $column);
+        $pdo->exec($alterSql);
+    }
 }
 
 function normalise_limit($value): ?int
