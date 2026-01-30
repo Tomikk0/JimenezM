@@ -911,6 +911,12 @@ select:focus {
   max-height: calc(100vh - 96px);
 }
 
+.add-car-modal-inline {
+  max-width: 100%;
+  width: 100%;
+  max-height: none;
+}
+
 .add-car-modal .edit-modal-body {
   padding: 26px 34px;
   display: grid;
@@ -931,6 +937,10 @@ select:focus {
   display: grid;
   grid-template-columns: repeat(3, minmax(160px, 1fr));
   gap: 16px;
+}
+
+.add-car-fields.add-car-fields--two {
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
 }
 
 .add-car-field label {
@@ -1081,6 +1091,12 @@ select:focus {
   border-top: 1px solid var(--ui-divider);
   position: sticky;
   bottom: 0;
+}
+
+.add-car-modal-footer.add-car-modal-footer--inline {
+  position: static;
+  border-radius: 16px;
+  margin-top: 20px;
 }
 
 .add-car-footer-actions {
