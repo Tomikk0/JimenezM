@@ -413,8 +413,11 @@ function clearGalleryForm() {
   document.getElementById('galleryPrice').value = '';
   clearGalleryImage();
 
-  if (typeof resetTuningOptionVisibility === 'function') {
-    resetTuningOptionVisibility('gallery');
+  const keepTuning = document.getElementById('gallerySaveTuning');
+  if (!keepTuning || !keepTuning.checked) {
+    if (typeof resetTuningOptionVisibility === 'function') {
+      resetTuningOptionVisibility('gallery');
+    }
   }
   // ELTÁVOLÍTVA: showGalleryMessage('Űrlap törölve!', 'success');
 }
