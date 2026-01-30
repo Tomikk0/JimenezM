@@ -88,7 +88,7 @@ async function loadCarGallery() {
       .from('cars')
       .select('*')
       .eq('is_gallery', true)
-      .order('created_at', { ascending: false });
+      .order('model', { ascending: true });
 
     if (error) throw error;
 
@@ -198,18 +198,7 @@ function renderCarGallery(cars, query = '') {
       const canDelete = (car.added_by === currentUser.tagName || currentUser.role === 'admin');
       
       let buttonsHtml = '';
-      
-      // ÁR MÓDOSÍTÁS gomb
-      const basePricePayload = JSON.stringify(car.base_price ?? null);
-      const salePricePayload = JSON.stringify(car.sale_price ?? null);
-      const modelNamePayload = car.model ? car.model.replace(/'/g, "\\'") : '';
 
-      buttonsHtml += `
-        <button class="modern-btn-sold" onclick="openEditGalleryPriceModalWithModel(${car.id}, ${basePricePayload}, ${salePricePayload}, '${modelNamePayload}')">
-          ✏️ Ár módosítás
-        </button>
-      `;
-      
       // TÖRLÉS gomb
       if (canDelete) {
         buttonsHtml += `<button class="modern-btn-delete" onclick="deleteGalleryCar(${car.id})">❌ Törlés</button>`;
