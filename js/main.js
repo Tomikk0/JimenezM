@@ -1,102 +1,6 @@
-// === JAVÍTOTT HALLOWEEN THEME FUNKCIÓK ===
-
-// Halloween theme toggle
-function toggleHalloweenTheme() {
-    const body = document.body;
-    const isHalloween = body.classList.contains('halloween-theme');
-
-    if (isHalloween) {
-        body.classList.remove('halloween-theme');
-        localStorage.setItem('halloweenTheme', 'false');
-        removeHalloweenDecorations();
-        console.log('🎃 Halloween theme kikapcsolva');
-    } else {
-        body.classList.add('halloween-theme');
-        localStorage.setItem('halloweenTheme', 'true');
-        addHalloweenDecorations();
-        console.log('🎃 Halloween theme bekapcsolva');
-    }
-
-    syncHalloweenTheme();
-}
-
-// Halloween dekorációk hozzáadása
-function addHalloweenDecorations() {
-    if (!document.body.classList.contains('halloween-theme')) return;
-    if (document.querySelector('.halloween-decoration')) return;
-    
-    const decorations = ['🎃', '👻', '🦇', '🕷️', '🕸️', '💀'];
-    const body = document.body;
-    
-    for (let i = 0; i < 15; i++) {
-        const deco = document.createElement('div');
-        deco.className = 'halloween-decoration halloween-float';
-        deco.textContent = decorations[Math.floor(Math.random() * decorations.length)];
-        deco.style.left = Math.random() * 100 + 'vw';
-        deco.style.top = Math.random() * 100 + 'vh';
-        deco.style.fontSize = (Math.random() * 2 + 1) + 'em';
-        deco.style.opacity = Math.random() * 0.3 + 0.1;
-        deco.style.animationDelay = Math.random() * 5 + 's';
-        body.appendChild(deco);
-    }
-}
-
-// Dekorációk eltávolítása
-function removeHalloweenDecorations() {
-    const decorations = document.querySelectorAll('.halloween-decoration');
-    decorations.forEach(deco => {
-        deco.remove();
-    });
-}
-
-// Halloween theme betöltése
-function loadHalloweenTheme() {
-    const savedTheme = localStorage.getItem('halloweenTheme');
-    if (savedTheme === 'true') {
-        document.body.classList.add('halloween-theme');
-        console.log('🎃 Halloween theme betöltve');
-    }
-
-    syncHalloweenTheme();
-}
-
-// Toggle gomb hozzáadása
-function addHalloweenToggle() {
-    if (document.querySelector('.halloween-toggle')) return;
-    
-    const toggleBtn = document.createElement('button');
-    toggleBtn.className = 'halloween-toggle';
-    toggleBtn.innerHTML = '🎃';
-    toggleBtn.title = 'Halloween Theme Kapcsoló';
-    toggleBtn.onclick = toggleHalloweenTheme;
-    document.body.appendChild(toggleBtn);
-}
-function syncHalloweenTheme() {
-    if (document.body.classList.contains('halloween-theme')) {
-        addHalloweenDecorations();
-    } else {
-        removeHalloweenDecorations();
-    }
-}
-
-const halloweenObserver = new MutationObserver(function(mutations) {
-    for (const mutation of mutations) {
-        if (mutation.attributeName === 'class') {
-            syncHalloweenTheme();
-            break;
-        }
-    }
-});
-
-halloweenObserver.observe(document.body, {
-    attributes: true,
-    attributeFilter: ['class']
-});
-
+// === DARK MODE BEÁLLÍTÁSOK ===
 document.addEventListener('DOMContentLoaded', function() {
-    addHalloweenToggle();
-    loadHalloweenTheme();
-    syncHalloweenTheme();
+  document.body.classList.add('dark-theme');
 });
 // === OLDAL KEZELÉS ===
 function showPage(pageName) {
@@ -1471,12 +1375,13 @@ function toggleTuningOption(button) {
   try {
     if (!button) return;
 
+    const container = button.closest('[data-tuning-scope]') || document;
     const category = button.dataset.category || button.dataset.group || '';
     const normalizedCategory = normalizeTuningCategory(category);
     const isExclusive = EXCLUSIVE_TUNING_CATEGORIES.has(normalizedCategory);
 
     if (isExclusive) {
-      const matchingOptions = Array.from(document.querySelectorAll('.modern-tuning-option'))
+      const matchingOptions = Array.from(container.querySelectorAll('.modern-tuning-option'))
         .filter(opt => normalizeTuningCategory(opt.dataset.category || opt.dataset.group || '') === normalizedCategory);
 
       matchingOptions.forEach(opt => {
@@ -1501,9 +1406,15 @@ function toggleTuningOption(button) {
   }
 }
 
-function resetTuningOptionVisibility() {
+function resetTuningOptionVisibility(scope = '') {
   try {
-    document.querySelectorAll('.modern-tuning-option').forEach(opt => {
+    const root = scope
+      ? document.querySelector(`[data-tuning-scope="${scope}"]`)
+      : document;
+
+    if (!root) return;
+
+    root.querySelectorAll('.modern-tuning-option').forEach(opt => {
       opt.classList.remove('selected', 'option-hidden');
       opt.style.transform = 'translateY(0) scale(1)';
     });
@@ -1512,13 +1423,16 @@ function resetTuningOptionVisibility() {
   }
 }
 
-function renderTuningOptions(options) {
+function renderTuningOptionsInContainer(options, config) {
   try {
-    const container = document.getElementById('addCarTuningContainer');
-    const compactSection = document.getElementById('addCarCompactSection');
+    const { containerId, compactSectionId, scope } = config || {};
+    const container = document.getElementById(containerId);
+    const compactSection = compactSectionId ? document.getElementById(compactSectionId) : null;
     if (!container) return;
 
+    container.dataset.tuningScope = scope || '';
     container.innerHTML = '';
+
     if (!options || options.length === 0) {
       container.innerHTML = '<div class="tuning-loading">Nincs tuning opció.</div>';
       if (compactSection) {
@@ -1565,6 +1479,7 @@ function renderTuningOptions(options) {
       button.dataset.group = groupName;
       button.dataset.category = category;
       button.dataset.value = value;
+      button.dataset.scope = scope || '';
       button.onclick = () => toggleTuningOption(button);
       optionsEl.appendChild(button);
     });
@@ -1572,12 +1487,25 @@ function renderTuningOptions(options) {
     groupEl.appendChild(optionsEl);
     container.appendChild(groupEl);
   } catch (error) {
-    console.error('renderTuningOptions hiba:', error);
-    const compactSection = document.getElementById('addCarCompactSection');
+    console.error('renderTuningOptionsInContainer hiba:', error);
+    const compactSection = compactSectionId ? document.getElementById(compactSectionId) : null;
     if (compactSection) {
       compactSection.style.display = 'none';
     }
   }
+}
+
+function renderTuningOptions(options) {
+  renderTuningOptionsInContainer(options, {
+    containerId: 'addCarTuningContainer',
+    compactSectionId: 'addCarCompactSection',
+    scope: 'add-car'
+  });
+
+  renderTuningOptionsInContainer(options, {
+    containerId: 'galleryTuningContainer',
+    scope: 'gallery'
+  });
 }
 
 async function loadModelOptions() {
@@ -1755,7 +1683,7 @@ async function loadCarGallery() {
     const tbody = document.getElementById('galleryTableBody');
     tbody.innerHTML = `
       <tr>
-        <td colspan="5" style="text-align: center; color: #e53e3e; padding: 20px;">
+        <td colspan="6" style="text-align: center; color: #e53e3e; padding: 20px;">
           ❌ Hiba történt az autó képek betöltésekor
         </td>
       </tr>

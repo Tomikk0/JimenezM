@@ -1,21 +1,129 @@
 // === GALÉRIA FUNKCIÓK ===
+let addGalleryCarModalEscHandler = null;
+let galleryCarsCache = [];
+
+function normalizeGalleryPriceInput(rawValue) {
+  const value = (rawValue || '').toString().trim();
+  if (!value) return null;
+
+  if (/^\d+$/.test(value)) {
+    return parseInt(value, 10);
+  }
+
+  return value;
+}
+
+function formatGalleryPriceDisplay(value) {
+  if (value === null || value === undefined || value === '') {
+    return '-';
+  }
+
+  if (typeof value === 'number') {
+    return `${new Intl.NumberFormat('hu-HU').format(value)} $`;
+  }
+
+  const raw = value.toString();
+  if (/^\d+$/.test(raw)) {
+    return `${new Intl.NumberFormat('hu-HU').format(parseInt(raw, 10))} $`;
+  }
+
+  return escapeHtml(raw);
+}
+
+function handleGalleryEditClick(button) {
+  try {
+    if (!button || !button.dataset) return;
+
+    const carId = parseInt(button.dataset.carId || '', 10);
+    if (Number.isNaN(carId)) {
+      showGalleryMessage('Autó azonosító hiányzik!', 'error');
+      return;
+    }
+
+    const baseRaw = decodeURIComponent(button.dataset.basePrice || '');
+    const saleRaw = decodeURIComponent(button.dataset.salePrice || '');
+    const modelName = decodeURIComponent(button.dataset.modelName || '');
+
+    const baseValue = normalizeGalleryPriceInput(baseRaw);
+    const saleValue = normalizeGalleryPriceInput(saleRaw);
+
+    openEditGalleryPriceModalWithModel(carId, baseValue, saleValue, modelName);
+  } catch (error) {
+    console.error('handleGalleryEditClick hiba:', error);
+    showGalleryMessage('Hiba történt az ár módosítás megnyitásakor', 'error');
+  }
+}
+
+function openAddGalleryCarModal() {
+  try {
+    if (!currentUser) {
+      showGalleryMessage('Bejelentkezés szükséges!', 'warning');
+      return;
+    }
+
+    clearGalleryForm();
+
+    const modal = document.getElementById('addGalleryCarModal');
+    if (!modal) return;
+
+    modal.style.display = 'block';
+    modal.classList.add('active');
+
+    setTimeout(() => {
+      const input = document.getElementById('galleryModelSearch');
+      if (input) {
+        input.focus();
+      }
+    }, 150);
+
+    if (!addGalleryCarModalEscHandler) {
+      addGalleryCarModalEscHandler = (event) => {
+        if (event.key === 'Escape') {
+          closeAddGalleryCarModal();
+        }
+      };
+    }
+
+    document.addEventListener('keydown', addGalleryCarModalEscHandler);
+  } catch (error) {
+    console.error('openAddGalleryCarModal hiba:', error);
+  }
+}
+
+function closeAddGalleryCarModal() {
+  try {
+    const modal = document.getElementById('addGalleryCarModal');
+    if (!modal) return;
+
+    modal.classList.remove('active');
+    modal.style.display = 'none';
+
+    if (addGalleryCarModalEscHandler) {
+      document.removeEventListener('keydown', addGalleryCarModalEscHandler);
+      addGalleryCarModalEscHandler = null;
+    }
+  } catch (error) {
+    console.error('closeAddGalleryCarModal hiba:', error);
+  }
+}
 async function loadCarGallery() {
   try {
     const { data: cars, error } = await supabase
       .from('cars')
       .select('*')
       .eq('is_gallery', true)
-      .order('created_at', { ascending: false });
+      .order('model', { ascending: true });
 
     if (error) throw error;
-    
-    renderCarGallery(cars || []);
+
+    galleryCarsCache = Array.isArray(cars) ? cars : [];
+    filterGalleryCars();
   } catch (error) {
     console.error('Car gallery load error:', error);
     const tbody = document.getElementById('galleryTableBody');
     tbody.innerHTML = `
       <tr>
-        <td colspan="5" style="text-align: center; color: #e53e3e; padding: 20px;">
+        <td colspan="6" style="text-align: center; color: #e53e3e; padding: 20px;">
           ❌ Hiba történt az autó képek betöltésekor
         </td>
       </tr>
@@ -23,15 +131,44 @@ async function loadCarGallery() {
   }
 }
 
-function renderCarGallery(cars) {
+function filterGalleryCars() {
+  const searchInput = document.getElementById('gallerySearch');
+  const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+  if (!query) {
+    renderCarGallery(galleryCarsCache);
+    return;
+  }
+
+  const filtered = galleryCarsCache.filter(car => {
+    const model = (car.model || '').toLowerCase();
+    return model.includes(query);
+  });
+
+  renderCarGallery(filtered, query);
+}
+
+function renderCarGallery(cars, query = '') {
   const tbody = document.getElementById('galleryTableBody');
   
   if (!cars || cars.length === 0) {
+    if (query) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="empty-table-message">
+            🔍 Nincs találat a keresésre<br>
+            <small style="opacity: 0.7;">Próbálj másik kifejezést!</small>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
     tbody.innerHTML = `
       <tr>
         <td colspan="6" class="empty-table-message">
           🚗 Nincsenek megjeleníthető autók a galériában<br>
-          <small style="opacity: 0.7;">Adj hozzá egy új autót a fenti űrlappal!</small>
+          <small style="opacity: 0.7;">Adj hozzá egy új autót a felugró ablakban!</small>
         </td>
       </tr>
     `;
@@ -75,8 +212,9 @@ function renderCarGallery(cars) {
     }
     
     // ÁRAK
-    const baseAr = car.base_price ? new Intl.NumberFormat('hu-HU').format(car.base_price) + ' $' : '-';
-    const eladasiAr = car.sale_price ? new Intl.NumberFormat('hu-HU').format(car.sale_price) + ' $' : '-';
+    const baseAr = formatGalleryPriceDisplay(car.base_price);
+    const eladasiAr = formatGalleryPriceDisplay(car.sale_price);
+    const tuningText = car.tuning ? escapeHtml(car.tuning) : '-';
     
     // MŰVELET GOMBOK
     let actionCell = '';
@@ -84,14 +222,22 @@ function renderCarGallery(cars) {
       const canDelete = (car.added_by === currentUser.tagName || currentUser.role === 'admin');
       
       let buttonsHtml = '';
-      
-      // ÁR MÓDOSÍTÁS gomb
+
+      const basePriceAttr = escapeHtml(encodeURIComponent(car.base_price ?? ''));
+      const salePriceAttr = escapeHtml(encodeURIComponent(car.sale_price ?? ''));
+      const modelNameAttr = escapeHtml(encodeURIComponent(car.model ?? ''));
+
       buttonsHtml += `
-        <button class="modern-btn-sold" onclick="openEditGalleryPriceModalWithModel(${car.id}, ${car.base_price || 0}, ${car.sale_price || 0}, '${car.model ? car.model.replace(/'/g, "\\'") : ''}')">
+        <button class="modern-btn-sold"
+                data-car-id="${car.id}"
+                data-base-price="${basePriceAttr}"
+                data-sale-price="${salePriceAttr}"
+                data-model-name="${modelNameAttr}"
+                onclick="handleGalleryEditClick(this)">
           ✏️ Ár módosítás
         </button>
       `;
-      
+
       // TÖRLÉS gomb
       if (canDelete) {
         buttonsHtml += `<button class="modern-btn-delete" onclick="deleteGalleryCar(${car.id})">❌ Törlés</button>`;
@@ -111,6 +257,7 @@ function renderCarGallery(cars) {
     row.innerHTML = `
       ${imageHtml}
       <td style="font-weight: 600; color: #2d3748;">${escapeHtml(car.model || '')}</td>
+      <td class="tuning-cell">${tuningText}</td>
       <td class="price-cell price-desired">${baseAr}</td>
       <td class="price-cell price-sale" id="price-${car.id}">${eladasiAr}</td>
       ${actionCell}
@@ -127,11 +274,11 @@ function openEditGalleryPriceModalWithModel(carId, currentBasePrice, currentSale
   document.getElementById('editGalleryCarModel').textContent = modelName || 'Ismeretlen modell';
   
   // Árak formázása
-  const formattedBasePrice = currentBasePrice ? new Intl.NumberFormat('hu-HU').format(currentBasePrice) : '';
-  const formattedSalePrice = currentSalePrice ? new Intl.NumberFormat('hu-HU').format(currentSalePrice) : '';
+  const formattedBasePrice = formatGalleryPriceDisplay(currentBasePrice);
+  const formattedSalePrice = formatGalleryPriceDisplay(currentSalePrice);
   
-  document.getElementById('editGalleryBasePrice').value = formattedBasePrice;
-  document.getElementById('editGalleryPrice').value = formattedSalePrice;
+  document.getElementById('editGalleryBasePrice').value = formattedBasePrice === '-' ? '' : formattedBasePrice.replace(/\s*\$\s*$/, '');
+  document.getElementById('editGalleryPrice').value = formattedSalePrice === '-' ? '' : formattedSalePrice.replace(/\s*\$\s*$/, '');
   
   // Modal megjelenítése
   document.getElementById('editGalleryPriceModal').style.display = 'block';
@@ -150,15 +297,18 @@ async function addGalleryCar() {
     }
 
     const model = document.getElementById('galleryModelSearch').value.trim();
-    const basePrice = document.getElementById('galleryBasePrice').value.replace(/[^\d]/g, '');
-    const price = document.getElementById('galleryPrice').value.replace(/[^\d]/g, '');
+    const basePriceRaw = document.getElementById('galleryBasePrice').value;
+    const priceRaw = document.getElementById('galleryPrice').value;
+    const selectedTuning = Array.from(document.querySelectorAll('#galleryTuningContainer .modern-tuning-option.selected'))
+      .map(div => div.dataset.value || div.textContent)
+      .join(', ');
 
     if (!model) {
       showGalleryMessage('Válassz modellt a listából!', 'warning');
       return;
     }
 
-    if (!price) {
+    if (!priceRaw.trim()) {
       showGalleryMessage('Add meg az eladási árat!', 'warning');
       return;
     }
@@ -171,8 +321,9 @@ async function addGalleryCar() {
 
     const carData = {
       model: model,
-      base_price: basePrice ? parseInt(basePrice) : null, // Új alap ár mező
-      sale_price: parseInt(price),
+      base_price: normalizeGalleryPriceInput(basePriceRaw),
+      sale_price: normalizeGalleryPriceInput(priceRaw),
+      tuning: selectedTuning,
       added_by: currentUser.tagName,
       image_data_url: imageDataUrl, // Ez lehet null is
       is_gallery: true,
@@ -193,6 +344,7 @@ async function addGalleryCar() {
       console.log('✅ Galéria autó hozzáadva:', data);
       showGalleryMessage('Autó sikeresen hozzáadva a galériához!', 'success');
       clearGalleryForm();
+      closeAddGalleryCarModal();
       loadCarGallery();
     }
 
@@ -224,11 +376,11 @@ function openEditGalleryPriceModal(carId, currentBasePrice, currentSalePrice) {
   document.getElementById('editGalleryCarModel').textContent = modelName;
   
   // Árak formázása
-  const formattedBasePrice = currentBasePrice ? new Intl.NumberFormat('hu-HU').format(currentBasePrice) : '';
-  const formattedSalePrice = currentSalePrice ? new Intl.NumberFormat('hu-HU').format(currentSalePrice) : '';
+  const formattedBasePrice = formatGalleryPriceDisplay(currentBasePrice);
+  const formattedSalePrice = formatGalleryPriceDisplay(currentSalePrice);
   
-  document.getElementById('editGalleryBasePrice').value = formattedBasePrice;
-  document.getElementById('editGalleryPrice').value = formattedSalePrice;
+  document.getElementById('editGalleryBasePrice').value = formattedBasePrice === '-' ? '' : formattedBasePrice.replace(/\s*\$\s*$/, '');
+  document.getElementById('editGalleryPrice').value = formattedSalePrice === '-' ? '' : formattedSalePrice.replace(/\s*\$\s*$/, '');
   
   // Modal megjelenítése
   document.getElementById('editGalleryPriceModal').style.display = 'block';
@@ -247,21 +399,16 @@ function closeEditGalleryPriceModal() {
 async function saveGalleryPrice() {
   try {
     const carId = document.getElementById('editGalleryCarId').value;
-    const newPrice = document.getElementById('editGalleryPrice').value.replace(/[^\d]/g, '');
+    const newBasePriceRaw = document.getElementById('editGalleryBasePrice').value;
+    const newPriceRaw = document.getElementById('editGalleryPrice').value;
     
     if (!carId) {
       showGalleryMessage('Autó azonosító hiányzik!', 'error');
       return;
     }
     
-    if (!newPrice) {
+    if (!newPriceRaw.trim() && !newBasePriceRaw.trim()) {
       showGalleryMessage('Add meg az új árat!', 'warning');
-      return;
-    }
-    
-    const priceValue = parseInt(newPrice);
-    if (isNaN(priceValue) || priceValue <= 0) {
-      showGalleryMessage('Érvényes árat adj meg!', 'error');
       return;
     }
 
@@ -286,7 +433,8 @@ async function saveGalleryPrice() {
     const { error } = await supabase
       .from('cars')
       .update({ 
-        sale_price: priceValue,
+        base_price: normalizeGalleryPriceInput(newBasePriceRaw),
+        sale_price: normalizeGalleryPriceInput(newPriceRaw),
         updated_at: new Date().toISOString()
       })
       .eq('id', carId);

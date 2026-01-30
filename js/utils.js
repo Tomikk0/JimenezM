@@ -11,6 +11,9 @@ function escapeHtml(unsafe) {
 
 function formatInputPrice(input) {
   try {
+    if (input && input.dataset && input.dataset.allowRange === 'true') {
+      return;
+    }
     const value = input.value.replace(/[^\d]/g, '');
     if (value) {
       const formatted = new Intl.NumberFormat('hu-HU').format(parseInt(value));
@@ -385,7 +388,7 @@ function clearInputs() {
     if (addedBySelect) addedBySelect.value = '';
 
     if (typeof resetTuningOptionVisibility === 'function') {
-      resetTuningOptionVisibility();
+      resetTuningOptionVisibility('add-car');
     } else {
       document.querySelectorAll('.modern-tuning-option').forEach(div => {
         div.classList.remove('selected');
@@ -406,8 +409,16 @@ function clearInputs() {
 // Galéria űrlap törlése
 function clearGalleryForm() {
   document.getElementById('galleryModelSearch').value = '';
+  document.getElementById('galleryBasePrice').value = '';
   document.getElementById('galleryPrice').value = '';
   clearGalleryImage();
+
+  const keepTuning = document.getElementById('gallerySaveTuning');
+  if (!keepTuning || !keepTuning.checked) {
+    if (typeof resetTuningOptionVisibility === 'function') {
+      resetTuningOptionVisibility('gallery');
+    }
+  }
   // ELTÁVOLÍTVA: showGalleryMessage('Űrlap törölve!', 'success');
 }
 

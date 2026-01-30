@@ -6,14 +6,12 @@
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/pages.css">
   <link rel="stylesheet" href="css/responsive.css">
-  <link rel="stylesheet" href="css/halloween.css">
-   <link rel="stylesheet" href="css/dark-theme.css">
+  <link rel="stylesheet" href="css/dark-theme.css">
   <link rel="stylesheet" href="css/modern.css">
 </head>
-<body>
+<body class="modern-theme dark-theme">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Jimenez Motors Inc.</title>
-  <body class="modern-theme">
   <main id="siteMain" class="site-main">
 <div class="header-with-image">
   <div class="header-content">
@@ -734,51 +732,17 @@
       <div class="modern-form-header">
         <h3>➕ Új autó hozzáadása a listához</h3>
       </div>
-      
-<div class="modern-form-row">
-  <div class="modern-form-group">
-    <label for="galleryModelSearch">🚗 Modell</label>
-    <div class="model-search-container modern">
-      <input type="text" id="galleryModelSearch" class="modern-input" placeholder="Keresés modellek között..." 
-            onfocus="showGalleryModelDropdown()" oninput="filterGalleryModels()">
-      <div id="galleryModelDropdown" class="model-dropdown modern"></div>
-    </div>
-  </div>
-
-  <div class="modern-form-group">
-    <label for="galleryBasePrice">💰 Alap ár</label>
-    <div class="modern-input-container price">
-      <input type="text" id="galleryBasePrice" class="modern-input" placeholder="0" 
-             oninput="formatInputPrice(this)">
-    </div>
-  </div>
-
-  <div class="modern-form-group">
-    <label for="galleryPrice">💵 Eladási ár</label>
-    <div class="modern-input-container price">
-      <input type="text" id="galleryPrice" class="modern-input" placeholder="0" 
-             oninput="formatInputPrice(this)">
-    </div>
-  </div>
-</div>
-
-      <!-- Modern kép feltöltés - NEM KÖTELEZŐ -->
-      <div class="modern-image-section">
-        <h4>📷 Autó képe <span style="color: var(--ui-text-muted); font-size: 0.8em; font-weight: normal;">(opcionális)</span></h4>
-        <div class="modern-image-upload-container">
-          <input type="file" id="galleryCarImage" accept="image/*" style="display: none;" onchange="handleGalleryImageSelect(event)">
-          <button type="button" onclick="document.getElementById('galleryCarImage').click()" class="modern-image-upload-btn">
-            📁 Kép kiválasztása
-          </button>
-          <span id="galleryImageFileName" class="modern-image-file-name">Nincs kép kiválasztva</span>
-        </div>
-        <div id="galleryImagePreview" class="modern-image-preview"></div>
-      </div>
-
-      <!-- Modern gombok -->
-      <div class="modern-form-actions">
-        <button onclick="addGalleryCar()" class="modern-btn-primary">➕ Autó hozzáadása</button>
+      <div class="modern-form-actions modern-form-actions--gallery">
+        <button onclick="openAddGalleryCarModal()" class="modern-btn-primary">➕ Autó hozzáadása</button>
         <button onclick="loadCarGallery()" class="modern-btn-secondary">🔄 Frissítés</button>
+        <div class="modern-form-search">
+          <label class="visually-hidden" for="gallerySearch">Keresés</label>
+          <div class="modern-input-container search">
+            <span class="input-icon">🔍</span>
+            <input type="text" id="gallerySearch" class="modern-input" placeholder="Keresés autóra..."
+                   oninput="filterGalleryCars()">
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -790,17 +754,94 @@
       <tr>
         <th>📷 Kép</th>
         <th>🚗 Modell</th>
-        <th>💰 Alap ár</th>
+        <th>🔧 Tuning</th>
+        <th>💰 Vételi ár</th>
         <th>💵 Eladási ár</th>
         <th id="galleryActionHeader" style="display: none;">⚡ Művelet</th>
       </tr>
     </thead>
     <tbody id="galleryTableBody">
       <tr>
-        <td colspan="5" class="table-loading">Autó árak betöltése...</td>
+        <td colspan="6" class="table-loading">Autó árak betöltése...</td>
       </tr>
       </tbody>
     </table>
+  </div>
+</div>
+
+<!-- ÚJ: Galéria autó hozzáadás modal -->
+<div id="addGalleryCarModal" class="edit-modal" style="display: none;" onclick="if (event.target === this) closeAddGalleryCarModal()">
+  <div class="edit-modal-content add-car-modal">
+    <div class="edit-modal-header">
+      <h3>🚗 Új autó felvitele</h3>
+      <span class="edit-close" onclick="closeAddGalleryCarModal()">&times;</span>
+    </div>
+
+    <div class="edit-modal-body add-car-modal-body">
+      <section class="add-car-column">
+        <div class="add-car-fields add-car-fields--two">
+          <div class="add-car-field full">
+            <label for="galleryModelSearch">🚗 Modell</label>
+            <div class="model-search-container modern">
+              <input type="text" id="galleryModelSearch" class="modern-input" placeholder="Keresés modellek között..." 
+                    onfocus="showGalleryModelDropdown()" oninput="filterGalleryModels()">
+              <div id="galleryModelDropdown" class="model-dropdown modern"></div>
+            </div>
+          </div>
+
+          <div class="add-car-field">
+            <label for="galleryBasePrice">💰 Vételi ár</label>
+            <div class="modern-input-container price">
+              <input type="text" id="galleryBasePrice" class="modern-input" placeholder="0" 
+                    data-allow-range="true" oninput="formatInputPrice(this)">
+            </div>
+          </div>
+
+          <div class="add-car-field">
+            <label for="galleryPrice">💵 Eladási ár</label>
+            <div class="modern-input-container price">
+              <input type="text" id="galleryPrice" class="modern-input" placeholder="0" 
+                    data-allow-range="true" oninput="formatInputPrice(this)">
+            </div>
+          </div>
+        </div>
+
+        <div class="add-car-image">
+          <h4>📷 Autó képe <span style="color: var(--ui-text-muted); font-size: 0.8em; font-weight: normal;">(opcionális)</span></h4>
+          <div class="modern-image-upload-container">
+            <input type="file" id="galleryCarImage" accept="image/*" style="display: none;" onchange="handleGalleryImageSelect(event)">
+            <button type="button" onclick="document.getElementById('galleryCarImage').click()" class="modern-image-upload-btn">
+              📁 Kép kiválasztása
+            </button>
+            <span id="galleryImageFileName" class="modern-image-file-name">Nincs kép kiválasztva</span>
+          </div>
+          <div id="galleryImagePreview" class="modern-image-preview"></div>
+        </div>
+      </section>
+
+      <section class="add-car-column">
+        <div class="add-car-tunings">
+          <div class="add-car-tuning-header">
+            <h4>🔧 Tuning csomagok</h4>
+            <p>Válassz kategóriánként egy opciót – kiválasztás után a többi eltűnik.</p>
+            <label class="modern-checkbox">
+              <input type="checkbox" id="gallerySaveTuning">
+              <span>Tuningok megtartása új hozzáadáskor</span>
+            </label>
+          </div>
+          <div id="galleryTuningContainer" class="add-car-tuning-groups">
+            <div class="tuning-loading">Betöltés...</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="add-car-modal-footer">
+      <div class="add-car-footer-actions">
+        <button type="button" class="modern-btn-secondary" onclick="closeAddGalleryCarModal()">Mégse</button>
+        <button type="button" class="modern-btn-primary" onclick="addGalleryCar()">➕ Autó hozzáadása</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -821,17 +862,17 @@
 
       <div class="sale-form">
         <div class="form-group">
-          <label for="editGalleryBasePrice">💰 Alap ár</label>
+          <label for="editGalleryBasePrice">💰 Vételi ár</label>
           <div class="price-input-container">
-            <input type="text" id="editGalleryBasePrice" placeholder="0" maxlength="15" oninput="formatInputPrice(this)">
+            <input type="text" id="editGalleryBasePrice" placeholder="0" maxlength="15" data-allow-range="true" oninput="formatInputPrice(this)">
           </div>
-          <div class="price-hint">Írd be az alap árat</div>
+          <div class="price-hint">Írd be a vételi árat</div>
         </div>
 
         <div class="form-group">
           <label for="editGalleryPrice">💵 Eladási ár</label>
           <div class="price-input-container">
-            <input type="text" id="editGalleryPrice" placeholder="0" maxlength="15" oninput="formatInputPrice(this)">
+            <input type="text" id="editGalleryPrice" placeholder="0" maxlength="15" data-allow-range="true" oninput="formatInputPrice(this)">
           </div>
           <div class="price-hint">Írd be az eladási árat</div>
         </div>
