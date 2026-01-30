@@ -1,5 +1,6 @@
 // === GALÉRIA FUNKCIÓK ===
 let addGalleryCarModalEscHandler = null;
+let galleryCarsCache = [];
 
 function openAddGalleryCarModal() {
   try {
@@ -62,8 +63,9 @@ async function loadCarGallery() {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    
-    renderCarGallery(cars || []);
+
+    galleryCarsCache = Array.isArray(cars) ? cars : [];
+    filterGalleryCars();
   } catch (error) {
     console.error('Car gallery load error:', error);
     const tbody = document.getElementById('galleryTableBody');
@@ -77,10 +79,39 @@ async function loadCarGallery() {
   }
 }
 
-function renderCarGallery(cars) {
+function filterGalleryCars() {
+  const searchInput = document.getElementById('gallerySearch');
+  const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+  if (!query) {
+    renderCarGallery(galleryCarsCache);
+    return;
+  }
+
+  const filtered = galleryCarsCache.filter(car => {
+    const model = (car.model || '').toLowerCase();
+    return model.includes(query);
+  });
+
+  renderCarGallery(filtered, query);
+}
+
+function renderCarGallery(cars, query = '') {
   const tbody = document.getElementById('galleryTableBody');
   
   if (!cars || cars.length === 0) {
+    if (query) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="empty-table-message">
+            🔍 Nincs találat a keresésre<br>
+            <small style="opacity: 0.7;">Próbálj másik kifejezést!</small>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
     tbody.innerHTML = `
       <tr>
         <td colspan="6" class="empty-table-message">
